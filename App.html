@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro de Alumnos</title>
+</head>
+<body>
+
+<h1>Registro de Alumnos</h1>
+
+<form id="alumnoForm">
+    <label for="numcuenta">Número de Cuenta:</label>
+    <input type="text" id="numcuenta" name="numcuenta" required><br>
+
+    <label for="nombre">Nombre:</label>
+    <input type="text" id="nombre" name="nombre" required><br>
+
+    <label for="semestre">Semestre:</label>
+    <input type="text" id="semestre" name="semestre" required><br>
+
+    <button type="button" id="btnAgregar" onclick="agregarAlumno()">Agregar</button>
+    <button type="button" id="btnListar" onclick="listarAlumnos()">Listar</button>
+    <button type="button" id="btnEliminar" onclick="eliminarAlumno()">Eliminar</button>
+</form>
+
+<h2>Lista de Alumnos</h2>
+<ul id="listaAlumnos"></ul>
+
+<script>
+    const listaAlumnos = document.getElementById('listaAlumnos');
+
+    function agregarAlumno() {
+        const numcuenta = document.getElementById('numcuenta').value;
+        const nombre = document.getElementById('nombre').value;
+        const semestre = document.getElementById('semestre').value;
+
+        fetch('http://localhost:3000/alumnos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ numcuenta, nombre, semestre }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.tipo === 'agregar') {
+                alert('Alumno agregado con éxito');
+                listarAlumnos();
+            } else {
+                alert(data.mensaje);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    function listarAlumnos() {
+        fetch('http://localhost:3000/alumnos')
+        .then(response => response.json())
+        .then(data => {
+            listaAlumnos.innerHTML = '';
+
+            data.alumnos.forEach(alumno => {
+                const alumnoElement = document.createElement('li');
+                alumnoElement.textContent = `Número de Cuenta: ${alumno.numcuenta}, Nombre: ${alumno.nombre}, Semestre: ${alumno.semestre}`;
+
+                const btnModificar = document.createElement('button');
+                btnModificar.textContent = 'Modificar';
+                btnModificar.onclick = () => mostrarFormularioModificar(alumno);
+                alumnoElement.appendChild(btnModificar);
+
+                listaAlumnos.appendChild(alumnoElement);
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    function mostrarFormularioModificar(alumno) {
+        document.getElementById('numcuenta').value = alumno.numcuenta;
+        document.getElementById('nombre').value = alumno.nombre;
+        document.getElementById('semestre').value = alumno.semestre;
+
+        const btnAgregar = document.getElementById('btnAgregar');
+        btnAgregar.textContent = 'Actualizar';
+        btnAgregar.onclick = () => actualizarAlumno(alumno.numcuenta);
+    }
+
+    function actualizarAlumno(numcuenta) {
+        const nombre = document.getElementById('nombre').value;
+        const semestre = document.getElementById('semestre').value;
+
+        fetch(`http://localhost:3000/alumnos/${numcuenta}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ nombre, semestre }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.tipo === 'actualizar') {
+                alert('Alumno actualizado con éxito');
+                listarAlumnos();
+            } else {
+                alert(data.mensaje);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+        const btnAgregar = document.getElementById('btnAgregar');
+        btnAgregar.textContent = 'Agregar';
+        btnAgregar.onclick = agregarAlumno;
+    }
+
+    function eliminarAlumno() {
+        const numcuenta = document.getElementById('numcuenta').value;
+
+        fetch(`http://localhost:3000/alumnos/${numcuenta}`, {
+            method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.tipo === 'delete') {
+                alert('Alumno eliminado con éxito');
+                listarAlumnos();
+            } else {
+                alert(data.mensaje);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+
+</body>
+</html>
